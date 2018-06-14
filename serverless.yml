@@ -1,0 +1,34 @@
+service: serverless
+
+
+provider:
+  name: aws
+  runtime: python3.6
+
+
+# you can add packaging information here
+#package:
+#  include:
+#    - include-me.py
+#    - include-me-dir/**
+#  exclude:
+#    - exclude-me.py
+#    - exclude-me-dir/**
+
+
+plugins:
+  - serverless-python-requirements
+
+functions:
+  clients:
+    handler: handler.clients
+    events:
+      - http:
+          path: clients
+          method: get
+  cameras:
+    handler: handler.cameras
+    events:
+      - http:
+          path: cameras
+          method: get
