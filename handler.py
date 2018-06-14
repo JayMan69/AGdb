@@ -1,5 +1,6 @@
 import json
-import database
+from database import database
+
 
 def clients(event, context):
 
