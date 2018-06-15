@@ -38,3 +38,15 @@ functions:
       - http:
           path: client_cameras
           method: get
+  stream_details:
+    handler: handler.stream_details
+    events:
+      - http:
+          path: stream_details
+          method: get
+  stream_metadata:
+    handler: handler.stream_metadata
+    events:
+      - http:
+          path: stream_metadata
+          method: get
