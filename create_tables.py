@@ -1,7 +1,7 @@
 import os
 import sys
 import rds_config
-from sqlalchemy import Column, ForeignKey, Integer, String , DateTime
+from sqlalchemy import Column, ForeignKey, Integer, String , DateTime, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
@@ -21,7 +21,6 @@ class Camera(Base):
     # Here we define columns for the table person
     # Notice that each column is also a normal Python instance attribute.
     id = Column(Integer, primary_key=True)
-    camera_id = Column(String(250), nullable=False)
     name = Column(String(250), nullable=False)
 
 class Client_Cameras(Base):
@@ -41,6 +40,7 @@ class Stream(Base):
     id = Column(Integer, primary_key=True)
     stream_name = Column(String(250), nullable=False)
     arn = Column(String(250), nullable=False)
+    region = Column(String(250), nullable=False)
     camera_id = Column(Integer, ForeignKey('Camera.id'))
     camera = relationship(Camera)
 
@@ -73,6 +73,10 @@ class Stream_MetaData(Base):
     confidence = Column(String(250), nullable=True)
     position = Column(String(250), nullable=True)
 
+# added 6/14
+stream_metadata_label_index = Index('stream_metadata_label_index', Stream_MetaData.label)
+
+stream_details_time_index = Index('stream_details_time_index', Stream_Details.start_time,Stream_Details.end_time)
 
 
 if __name__ == '__main__':
@@ -84,3 +88,7 @@ if __name__ == '__main__':
     # Create all tables in the engine. This is equivalent to "Create Table"
     # statements in raw SQL.
     Base.metadata.create_all(engine)
+
+    # added 6/14. Need to comment the indexes or put in try catch blocks!!!
+    stream_metadata_label_index.create(bind=engine)
+    stream_details_time_index.create(bind=engine)

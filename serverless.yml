@@ -32,3 +32,9 @@ functions:
       - http:
           path: cameras
           method: get
+  client_cameras:
+    handler: handler.client_cameras
+    events:
+      - http:
+          path: client_cameras
+          method: get
