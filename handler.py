@@ -43,7 +43,7 @@ def client_cameras(event, context):
         db = database(event['headers']['client_id'])
         body = db.get_client_camera()
     else:
-        ""
+        body = ""
     response = {
         "statusCode": 200,
         "body": json.dumps(body)
