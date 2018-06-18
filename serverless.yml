@@ -54,5 +54,5 @@ functions:
     handler: handler.server_metadata
     events:
       - http:
-          path: stream_metadata
+          path: server_metadata
           method: get
