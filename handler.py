@@ -116,3 +116,12 @@ def stream_metadata(event, context):
     return response
 
 
+def get_server_metadata(event, context):
+    import datetime
+    body = {'servertime':datetime.datetime.now()}
+
+    response = {
+        "statusCode": 200,
+        "body": json.dumps(body)
+    }
+    return response
