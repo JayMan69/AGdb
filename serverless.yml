@@ -50,3 +50,9 @@ functions:
       - http:
           path: stream_metadata
           method: get
+  server_metadata:
+    handler: handler.server_metadata
+    events:
+      - http:
+          path: stream_metadata
+          method: get

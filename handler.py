@@ -116,7 +116,7 @@ def stream_metadata(event, context):
     return response
 
 
-def get_server_metadata(event, context):
+def server_metadata(event, context):
     import datetime
     body = {'servertime':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
