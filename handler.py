@@ -43,7 +43,7 @@ def client_cameras(event, context):
         db = database(event['headers']['client_id'])
         body = db.get_client_camera()
     else:
-        body = ""
+        body = "client_id not present in headers"
     response = {
         "statusCode": 200,
         "body": json.dumps(body)
@@ -59,7 +59,7 @@ def streams(event, context):
         db = database(event['headers']['camera_id'])
         body = db.get_stream()
     else:
-        body = ''
+        body = 'camera_id not present in headers'
 
     response = {
         "statusCode": 200,
@@ -80,7 +80,7 @@ def stream_details(event, context):
         else:
             body = db.get_stream_details()
     else:
-        body = ''
+        body = 'camera_id not present in headers'
 
     response = {
         "statusCode": 200,
@@ -101,11 +101,11 @@ def stream_metadata(event, context):
                 label = event['headers']['label']
                 body = db.get_stream_metadata_by_time(stime, etime,label)
             else:
-                body = ''
+                body = 'label not present in headers'
         else:
-            body = ''
+            body = 'start_time or end_time not present in headers'
     else:
-        body = ''
+        body = 'camera_id not present in headers'
 
     response = {
         "statusCode": 200,
