@@ -118,7 +118,10 @@ def stream_metadata(event, context):
 
 def server_metadata(event, context):
     import datetime
-    body = {'servertime':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+    from time import gmtime, strftime
+    body = {'servertime':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'servertimezone':strftime("%Z", gmtime())}
+
 
     response = {
         "statusCode": 200,
