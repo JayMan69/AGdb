@@ -1,6 +1,6 @@
 import os
 import sys
-import rds_config
+from AGdb.rds_config import db_username,db_password,db_endpoint,db_port,db_name
 from sqlalchemy import Column, ForeignKey, Integer, String , DateTime, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -82,6 +82,12 @@ class Stream_Details_TS(Base):
     transportname = Column(String(250), index=True,nullable=False)
     server_time = Column(DateTime, index=True,nullable=False)
 
+class Analytics_MetaData(Base):
+    __tablename__ = 'Analytics_MetaData'
+    id = Column(Integer, primary_key=True)
+    key = Column(String(250), index=True,nullable=False)
+    value = Column(String(250), index=True,nullable=False)
+
 
 # added 6/14
 stream_metadata_label_index = Index('stream_metadata_label_index', Stream_MetaData.label)
@@ -89,17 +95,17 @@ stream_details_time_index = Index('stream_details_time_index', Stream_Details.st
 
 # added 6/15
 statments = []
-statments.append('ALTER TABLE Stream_MetaData ADD column stream_details_ts_id int')
-
-statments.append( 'ALTER TABLE Stream_MetaData ADD CONSTRAINT Stream_MetaData_self_1 ' \
-              'FOREIGN KEY(stream_details_ts_id) REFERENCES Stream_Details_TS (id)')
+# statments.append('ALTER TABLE Stream_MetaData ADD column stream_details_ts_id int')
+#
+# statments.append( 'ALTER TABLE Stream_MetaData ADD CONSTRAINT Stream_MetaData_self_1 ' \
+#               'FOREIGN KEY(stream_details_ts_id) REFERENCES Stream_Details_TS (id)')
 
 
 
 if __name__ == '__main__':
     print('In main of create_tables')
-    connection_string = "mysql://"+rds_config.db_username+':'+rds_config.db_password+ '@' +\
-                        rds_config.db_endpoint+':'+ str(rds_config.db_port) +'/' + rds_config.db_name
+    connection_string = "mysql://"+db_username+':'+db_password+ '@' +\
+                        db_endpoint+':'+ str(db_port) +'/' + db_name
     engine = create_engine(connection_string)
 
     # Create all tables in the engine. This is equivalent to "Create Table"

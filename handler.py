@@ -34,7 +34,11 @@ def cameras(event, context):
 
     response = {
         "statusCode": 200,
-        "body": json.dumps(body)
+        "body": json.dumps(body),
+        "headers": {"Access-Control-Allow-Origin": "*",  # Required for CORS support to work
+                    "Access-Control-Allow-Credentials": True  # Required for cookies, authorization headers with HTTPS
+                    },
+
     }
 
 
@@ -49,7 +53,10 @@ def client_cameras(event, context):
         body = "client_id not present in headers"
     response = {
         "statusCode": 200,
-        "body": json.dumps(body)
+        "body": json.dumps(body),
+        "headers": {"Access-Control-Allow-Origin": "*",  # Required for CORS support to work
+                    "Access-Control-Allow-Credentials": True  # Required for cookies, authorization headers with HTTPS
+                    },
     }
 
 
@@ -66,7 +73,10 @@ def streams(event, context):
 
     response = {
         "statusCode": 200,
-        "body": json.dumps(body)
+        "body": json.dumps(body),
+        "headers": {"Access-Control-Allow-Origin": "*",  # Required for CORS support to work
+                    "Access-Control-Allow-Credentials": True  # Required for cookies, authorization headers with HTTPS
+                    },
     }
 
 
@@ -87,7 +97,10 @@ def stream_details(event, context):
 
     response = {
         "statusCode": 200,
-        "body": json.dumps(body)
+        "body": json.dumps(body),
+        "headers": {"Access-Control-Allow-Origin": "*",  # Required for CORS support to work
+                    "Access-Control-Allow-Credentials": True  # Required for cookies, authorization headers with HTTPS
+                    },
     }
 
 
@@ -112,7 +125,10 @@ def stream_metadata(event, context):
 
     response = {
         "statusCode": 200,
-        "body": json.dumps(body)
+        "body": json.dumps(body),
+        "headers": {"Access-Control-Allow-Origin": "*",  # Required for CORS support to work
+                    "Access-Control-Allow-Credentials": True  # Required for cookies, authorization headers with HTTPS
+                    },
     }
 
 
@@ -128,6 +144,9 @@ def server_metadata(event, context):
 
     response = {
         "statusCode": 200,
-        "body": json.dumps(body)
+        "body": json.dumps(body),
+        "headers": {"Access-Control-Allow-Origin": "*",  # Required for CORS support to work
+                    "Access-Control-Allow-Credentials": True  # Required for cookies, authorization headers with HTTPS
+                    },
     }
     return response

@@ -1,8 +1,10 @@
-from sqlalchemy import create_engine
+import pkg_resources
+from sqlalchemy import create_engine,update
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-import rds_config
-from create_tables import Client,Camera,Client_Cameras,Stream,Stream_Details,Stream_MetaData
+from AGdb.rds_config import db_username,db_password,db_endpoint,db_port,db_name
+from AGdb.create_tables import Client,Camera,Client_Cameras,Stream,Stream_Details,Stream_MetaData,\
+    Stream_Details_Raw,Stream_Details_TS,Analytics_MetaData
 import json
 import datetime
 from sqlalchemy.dialects import mssql
@@ -12,8 +14,8 @@ class database:
     def __init__(self,id=None):
         Base = declarative_base()
 
-        connection_string = "mysql://"+rds_config.db_username+':'+rds_config.db_password+ '@' +\
-                            rds_config.db_endpoint+':'+ str(rds_config.db_port) +'/' + rds_config.db_name
+        connection_string = "mysql://"+db_username+':'+db_password+ '@' +\
+                            db_endpoint+':'+ str(db_port) +'/' + db_name
 
         engine = create_engine(connection_string)
         Base.metadata.bind = engine
@@ -85,6 +87,13 @@ class database:
         rs1 = {'count':count,'result_set':rs}
         return rs1
 
+    def get_stream_object(self,query_column,value):
+        # get stream object with camera id given stream name
+        if query_column == 'arn':
+            instance = self.session.query(Stream).filter(Stream.arn== value).first()
+
+        return instance
+
     def get_stream_details(self):
         # List streams given camera id
         count = 0
@@ -102,6 +111,14 @@ class database:
 
         rs1 = {'count':count,'result_set':rs}
         return rs1
+
+    def get_stream_details_object(self,query_column,p_object):
+        # if start time is found, we need to delete everything in attendant tables and rerun
+        if query_column == 'start_time':
+            instance = self.session.query(Stream_Details).filter(Stream_Details.stream_id== p_object.stream_id)\
+                                                         .filter(Stream_Details.start_time == p_object.start_time).first()
+
+        return instance
 
     def get_stream_details_by_time(self,stime,etime):
         # List streams given camera id and time parameters
@@ -130,6 +147,37 @@ class database:
         return rs1
 
     def get_stream_metadata_by_time(self,stime,etime,label):
+        # List streams given camera id and time parameters
+        # TODO need to send back non contigous labels only
+        count = 0
+        rs = []
+        stime = datetime.datetime.strptime(stime, '%Y-%m-%d %H:%M:%S')
+        etime = datetime.datetime.strptime(etime, '%Y-%m-%d %H:%M:%S')
+        #q = self.session.query(Camera,Stream,Stream_Details).filter(Camera.id== self.id)\
+        #        .filter(Camera.id == Stream.camera_id , Stream.id == Stream_Details.stream_id) \
+        #        .filter(Stream_Details.start_time >= stime, Stream_Details.end_time <= etime)
+        #q1 = str(q.statement.compile(dialect=mssql.dialect()))
+        label = label.split(',')
+        for instance in self.session.query(Stream,Stream_Details,Stream_MetaData ).filter(Stream.camera_id== self.id)\
+                .filter(Stream.id == Stream_Details.stream_id , Stream_Details.id == Stream_MetaData.stream_details_id) \
+                .filter(Stream_Details.start_time >= stime, Stream_Details.end_time <= etime) \
+                .filter(Stream_MetaData.label.in_(label)):
+            count = count + 1
+            rs.append({'name':instance.Stream.stream_name,
+                       'arn': instance.Stream.arn,
+                       'id':instance.Stream_Details.id,
+                       'label':instance.Stream_MetaData.label,
+                       'manifest_file_name':instance.Stream_Details.manifest_file_name,
+                       'live':instance.Stream_Details.live,
+                       'label_timestamp':instance.Stream_MetaData.timestamp,
+                       'start_time':instance.Stream_Details.start_time.strftime('%Y-%m-%d %H:%M:%S'),
+                       'end_time':instance.Stream_Details.end_time.strftime('%Y-%m-%d %H:%M:%S')})
+
+        rs1 = {'count':count,'result_set':rs}
+        return rs1
+
+
+    def get_stream_metadata_by_time1(self,stime,etime,label):
         # List stream meta data given camera id and time parameters
         count = 0
         rs = []
@@ -156,6 +204,11 @@ class database:
         rs1 = {'count':count,'result_set':rs}
         return rs1
 
+    def get_analytics_metaData_object(self,key):
+        instance = self.session.query(Analytics_MetaData).filter(Analytics_MetaData.key == key).first()
+        return instance
+
+
     def quote(self,label):
         x = ""
         count = 0
@@ -167,24 +220,66 @@ class database:
                 x = x + ","
         return x
 
-    def put_stream(self):
-        # put streams given camera id
+    def put_stream_details(self,p_object):
         # TODO package this https://python-packaging.readthedocs.io/en/latest/
+        # https://www.pythonsheets.com/notes/python-sqlalchemy.html
+        row = Stream_Details(stream_id=p_object.stream_id,
+                             manifest_file_name=p_object.manifest_file_name,
+                             live = p_object.live,
+                             start_time = p_object.start_time,
+                             end_time = p_object.end_time)
+        self.session.add(row)
         return
 
-    def put_stream_details(self):
-        # put streams given camera id
+    def put_stream_details_raw(self,p_object):
+        row = Stream_Details_Raw(stream_details_id=p_object.stream_details_id,
+                                 rawfilename=p_object.rawfilename,
+                                 server_time = p_object.server_time)
+        self.session.add(row)
+
         return
 
-    def put_stream_metadata(self):
-        # put streams given camera id
+    def put_stream_details_ts(self,p_object):
+        row = Stream_Details_TS(stream_details_id=p_object.stream_details_id,
+                                transportname=p_object.transportname,
+                                 server_time = p_object.server_time)
+        self.session.add(row)
+
         return
 
+
+    def put_stream_metadata(self,p_object):
+        row = Stream_MetaData(stream_details_id=p_object.stream_details_id,
+                                transportname=p_object.transportname,
+                                 server_time = p_object.server_time)
+        self.session.add(row)
+
+        return
+
+    def update_stream(self,p_object):
+        stmt = update(Stream_Details).where(Stream_Details.id == p_object.id). \
+            values(live='False')
+
+    def update_analytics_metaData(self,p_object):
+        newval = int(p_object.value) + 1
+        p_object.value = str(newval)
+        self.session.commit()
 
 def testHarness():
     event = {}
     event['camera_id'] = 1
-    event['label'] = 'person,bird'
+    event['label'] = 'person,duck'
+
+    # db = database('1')
+    # instance = db.get_analytics_metaData_object('raw_file_next_value')
+    # db.update_analytics_metaData(instance)
+
+    db = database('2')
+    p_object = Stream_Details
+    p_object.stream_id = 2
+    p_object.start_time = datetime.datetime.strptime('2018-06-1 9:02:02', '%Y-%m-%d %H:%M:%S')
+    instance = db.get_stream_details_object('start_time',p_object)
+    print('')
 
     if 'client_id' in event:
         db = database(event['client_id'])
