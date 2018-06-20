@@ -41,6 +41,13 @@ functions:
           path: client_cameras
           method: get
           cors: true
+  streams:
+    handler: handler.streams
+    events:
+      - http:
+          path: streams
+          method: get
+          cors: true
   stream_details:
     handler: handler.stream_details
     events:
