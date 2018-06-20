@@ -83,7 +83,7 @@ class database:
         rs = []
         for instance in self.session.query(Stream).filter(Camera.id== self.id):
             count = count + 1
-            rs.append({'id':instance.id,'name':instance.name,'arn':instance.arn,'region':instance.region})
+            rs.append({'id':instance.id,'name':instance.stream_name,'arn':instance.arn,'region':instance.region})
         rs1 = {'count':count,'result_set':rs}
         return rs1
 
