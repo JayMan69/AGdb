@@ -26,12 +26,14 @@ functions:
       - http:
           path: clients
           method: get
+          cors: true
   cameras:
     handler: handler.cameras
     events:
       - http:
           path: cameras
           method: get
+          cors: true
   client_cameras:
     handler: handler.client_cameras
     events:
