@@ -7,8 +7,13 @@ from AGdb.create_tables import Client,Camera,Client_Cameras,Stream,Stream_Detail
     Stream_Details_Raw,Stream_Details_TS,Analytics_MetaData
 import json
 import datetime
-from sqlalchemy.dialects import mssql
+from sqlalchemy.dialects import mysql
 from sqlalchemy import func
+
+
+class Object(object):
+    pass
+
 
 class database:
     def __init__(self,id=None):
@@ -24,6 +29,7 @@ class database:
         self.session = DBSession()
         if id != None:
             self.id = id
+
 
     def get_clients(self):
         # List clients in the client table
@@ -112,13 +118,22 @@ class database:
         rs1 = {'count':count,'result_set':rs}
         return rs1
 
+
     def get_stream_details_object(self,query_column,p_object):
         # if start time is found, we need to delete everything in attendant tables and rerun
+        # table query does not seem to work with datetime
         if query_column == 'start_time':
-            instance = self.session.query(Stream_Details).filter(Stream_Details.stream_id== p_object.stream_id)\
-                                                         .filter(Stream_Details.start_time == p_object.start_time).first()
+            query_string = " select id  " \
+                           "from Stream_Details where stream_id = " + str(p_object.stream_id) +\
+                           " and start_time = '" + str(p_object.start_time) + "'"
+            instance = self.session.execute(query_string)
+            if instance.rowcount == 1:
+                for (id ) in instance:
+                    inst = self.session.query(Stream_Details).get(id)
+                    return inst
+        return None
 
-        return instance
+
 
     def get_stream_details_by_time(self,stime,etime):
         # List streams given camera id and time parameters
@@ -129,7 +144,7 @@ class database:
         #q = self.session.query(Camera,Stream,Stream_Details).filter(Camera.id== self.id)\
         #        .filter(Camera.id == Stream.camera_id , Stream.id == Stream_Details.stream_id) \
         #        .filter(Stream_Details.start_time >= stime, Stream_Details.end_time <= etime)
-        #q1 = str(q.statement.compile(dialect=mssql.dialect()))
+        #q1 = str(q.statement.compile(dialect=mysql.dialect()))
 
         for instance in self.session.query(Camera,Stream,Stream_Details).filter(Camera.id== self.id)\
                 .filter(Camera.id == Stream.camera_id , Stream.id == Stream_Details.stream_id) \
@@ -204,6 +219,7 @@ class database:
         rs1 = {'count':count,'result_set':rs}
         return rs1
 
+
     def get_analytics_metaData_object(self,key):
         instance = self.session.query(Analytics_MetaData).filter(Analytics_MetaData.key == key).first()
         return instance
@@ -229,6 +245,7 @@ class database:
                              start_time = p_object.start_time,
                              end_time = p_object.end_time)
         self.session.add(row)
+        self.session.commit()
         return
 
     def put_stream_details_raw(self,p_object):
@@ -236,7 +253,7 @@ class database:
                                  rawfilename=p_object.rawfilename,
                                  server_time = p_object.server_time)
         self.session.add(row)
-
+        self.session.commit()
         return
 
     def put_stream_details_ts(self,p_object):
@@ -244,7 +261,7 @@ class database:
                                 transportname=p_object.transportname,
                                  server_time = p_object.server_time)
         self.session.add(row)
-
+        self.session.commit()
         return
 
 
@@ -253,17 +270,19 @@ class database:
                                 transportname=p_object.transportname,
                                  server_time = p_object.server_time)
         self.session.add(row)
-
+        self.session.commit()
         return
 
     def update_stream(self,p_object):
         stmt = update(Stream_Details).where(Stream_Details.id == p_object.id). \
             values(live='False')
+        self.session.commit()
 
     def update_analytics_metaData(self,p_object):
         newval = int(p_object.value) + 1
         p_object.value = str(newval)
         self.session.commit()
+
 
 def testHarness():
     event = {}
@@ -275,10 +294,16 @@ def testHarness():
     # db.update_analytics_metaData(instance)
 
     db = database('2')
+    print(db.get_analytics_metaData_object('raw_file_next_value')[0].value)
+
     p_object = Stream_Details
     p_object.stream_id = 2
-    p_object.start_time = datetime.datetime.strptime('2018-06-1 9:02:02', '%Y-%m-%d %H:%M:%S')
+    #p_object.id = 1
+    p_object.resolution = '1280x720x3'
+    p_object.start_time = datetime.datetime.strptime('2018-06-1 9:04:02', '%Y-%m-%d %H:%M:%S')
+    #db.put_stream_details(p_object)
     instance = db.get_stream_details_object('start_time',p_object)
+    db.update_test(instance)
     print('')
 
     if 'client_id' in event:
