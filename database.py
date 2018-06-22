@@ -118,8 +118,21 @@ class database:
         rs1 = {'count':count,'result_set':rs}
         return rs1
 
-
     def get_stream_details_object(self,query_column,p_object):
+        # if start time is found, we need to delete everything in attendant tables and rerun
+        # table query does not seem to work with datetime
+
+        if query_column == 'start_time':
+            # ensure id and start_time is valid. Otherwise you will get False == 1 or True == 1 crap
+            id = p_object.id
+            stime = p_object.start_time
+            q = self.session.query(Stream_Details)
+            q1 = q.filter(Stream_Details.stream_id == id ,Stream_Details.start_time == stime )
+            #print(q1)
+            instance = q1.first()
+            return instance
+
+    def get_stream_details_object1(self,query_column,p_object):
         # if start time is found, we need to delete everything in attendant tables and rerun
         # table query does not seem to work with datetime
         if query_column == 'start_time':
@@ -132,8 +145,6 @@ class database:
                     inst = self.session.query(Stream_Details).get(id)
                     return inst
         return None
-
-
 
     def get_stream_details_by_time(self,stime,etime):
         # List streams given camera id and time parameters
@@ -160,6 +171,26 @@ class database:
 
         rs1 = {'count':count,'result_set':rs}
         return rs1
+
+    def get_stream_details_raw(self,query_column,id):
+        # if start time is found, we need to delete everything in attendant tables and rerun
+        # table query does not seem to work with datetime
+        if query_column == 'max_time':
+            query_string = " select max(server_time) " \
+                           "from Stream_Details_Raw where stream_details_id = " + str(id)
+        elif query_column == 'min_time':
+            query_string = " select min(server_time) " \
+                           "from Stream_Details_Raw where stream_details_id = " + str(id)
+
+        instance = self.session.execute(query_string)
+        if instance.rowcount == 1:
+            for (mt) in instance:
+                return mt[0]
+
+
+
+        return None
+
 
     def get_stream_metadata_by_time(self,stime,etime,label):
         # List streams given camera id and time parameters
@@ -221,7 +252,8 @@ class database:
 
 
     def get_analytics_metaData_object(self,key):
-        instance = self.session.query(Analytics_MetaData).filter(Analytics_MetaData.key == key).first()
+        instance = self.session.query(Analytics_MetaData).filter(Analytics_MetaData.camera_id == self.id,
+                                                                 Analytics_MetaData.key == key).first()
         return instance
 
 
@@ -242,17 +274,21 @@ class database:
         row = Stream_Details(stream_id=p_object.stream_id,
                              manifest_file_name=p_object.manifest_file_name,
                              live = p_object.live,
+                             resolution = p_object.resolution,
                              start_time = p_object.start_time,
                              end_time = p_object.end_time)
         self.session.add(row)
         self.session.commit()
-        return
+
+        return row
 
     def put_stream_details_raw(self,p_object):
         row = Stream_Details_Raw(stream_details_id=p_object.stream_details_id,
                                  rawfilename=p_object.rawfilename,
-                                 server_time = p_object.server_time)
+                                 server_time = p_object.server_time
+                                )
         self.session.add(row)
+        self.session.flush()
         self.session.commit()
         return
 
@@ -293,16 +329,18 @@ def testHarness():
     # instance = db.get_analytics_metaData_object('raw_file_next_value')
     # db.update_analytics_metaData(instance)
 
-    db = database('2')
-    print(db.get_analytics_metaData_object('raw_file_next_value')[0].value)
+    db = database(2)
+    #print(db.get_analytics_metaData_object('raw_file_next_value').value)
 
-    p_object = Stream_Details
-    p_object.stream_id = 2
+    p_object = Object()
+    id = 47
+    instance = db.get_stream_details_raw('max_time', id)
+    print (instance)
     #p_object.id = 1
     p_object.resolution = '1280x720x3'
     p_object.start_time = datetime.datetime.strptime('2018-06-1 9:04:02', '%Y-%m-%d %H:%M:%S')
     #db.put_stream_details(p_object)
-    instance = db.get_stream_details_object('start_time',p_object)
+    instance = db.get_stream_details_object1('start_time',p_object)
     db.update_test(instance)
     print('')
 

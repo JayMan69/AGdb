@@ -87,7 +87,8 @@ class Analytics_MetaData(Base):
     id = Column(Integer, primary_key=True)
     key = Column(String(250), index=True,nullable=False)
     value = Column(String(250), index=True,nullable=False)
-
+    camera_id = Column(Integer, ForeignKey('Camera.id'))
+    camera = relationship(Camera)
 
 # added 6/14
 stream_metadata_label_index = Index('stream_metadata_label_index', Stream_MetaData.label)
