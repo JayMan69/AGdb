@@ -290,7 +290,7 @@ class database:
         self.session.add(row)
         self.session.flush()
         self.session.commit()
-        return
+        return row
 
     def put_stream_details_ts(self,p_object):
         row = Stream_Details_TS(stream_details_id=p_object.stream_details_id,
