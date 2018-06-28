@@ -285,7 +285,8 @@ class database:
     def put_stream_details_raw(self,p_object):
         row = Stream_Details_Raw(stream_details_id=p_object.stream_details_id,
                                  rawfilename=p_object.rawfilename,
-                                 server_time = p_object.server_time
+                                 server_time = p_object.server_time,
+                                 producer_time = p_object.producer_time
                                 )
         self.session.add(row)
         self.session.flush()

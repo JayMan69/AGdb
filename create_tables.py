@@ -72,6 +72,7 @@ class Stream_Details_Raw(Base):
     # create index for rawfile to enable search
     rawfilename = Column(String(250), index=True,nullable=False)
     server_time = Column(DateTime, index=True,nullable=False)
+    producer_time = Column(DateTime, index=True, nullable=False)
 
 class Stream_Details_TS(Base):
     __tablename__ = 'Stream_Details_TS'
