@@ -1,7 +1,7 @@
 import os
 import sys
 from AGdb.rds_config import db_username,db_password,db_endpoint,db_port,db_name
-from sqlalchemy import Column, ForeignKey, Integer, String , DateTime, Index
+from sqlalchemy import Column, ForeignKey, Integer, String , DateTime, Index , DECIMAL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy import create_engine
@@ -63,6 +63,9 @@ class Stream_MetaData(Base):
     timestamp = Column(String(250), nullable=True)
     # foreign key constraint is created as an alter table statement below
     stream_details_ts_id = Column(Integer)
+    # added 6/29
+    group_id = Column(DECIMAL(14,3))
+    seconds = Column(DECIMAL(14,3))
 
 class Stream_Details_Raw(Base):
     __tablename__ = 'Stream_Details_Raw'

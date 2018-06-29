@@ -182,10 +182,16 @@ class database:
             query_string = " select min(server_time) " \
                            "from Stream_Details_Raw where stream_details_id = " + str(id)
 
+        elif query_column == 'rawfilename':
+            query_string = " select producer_time,stream_details_id " \
+                           "from Stream_Details_Raw where rawfilename = '" + str(id) + "'"
+
+
+
         instance = self.session.execute(query_string)
         if instance.rowcount == 1:
             for (mt) in instance:
-                return mt[0]
+                return mt
 
 
 
@@ -304,8 +310,13 @@ class database:
 
     def put_stream_metadata(self,p_object):
         row = Stream_MetaData(stream_details_id=p_object.stream_details_id,
-                                transportname=p_object.transportname,
-                                 server_time = p_object.server_time)
+                                frame_number=p_object.frame_number,
+                                label = p_object.label,
+                                confidence = p_object.confidence,
+                                position = p_object.position,
+                                timestamp = p_object.timestamp,
+                                group_id = p_object.group_id,
+                                seconds = p_object.seconds)
         self.session.add(row)
         self.session.commit()
         return
@@ -334,8 +345,8 @@ def testHarness():
     #print(db.get_analytics_metaData_object('raw_file_next_value').value)
 
     p_object = Object()
-    id = 47
-    instance = db.get_stream_details_raw('max_time', id)
+    id = 'test_2_rawfile00001000.mkv'
+    instance = db.get_stream_details_raw('rawfilename', id)
     print (instance)
     #p_object.id = 1
     p_object.resolution = '1280x720x3'
