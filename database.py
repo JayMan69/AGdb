@@ -205,11 +205,13 @@ class database:
         rs = []
         stime = datetime.datetime.strptime(stime, '%Y-%m-%d %H:%M:%S')
         etime = datetime.datetime.strptime(etime, '%Y-%m-%d %H:%M:%S')
-        #q = self.session.query(Camera,Stream,Stream_Details).filter(Camera.id== self.id)\
-        #        .filter(Camera.id == Stream.camera_id , Stream.id == Stream_Details.stream_id) \
-        #        .filter(Stream_Details.start_time >= stime, Stream_Details.end_time <= etime)
-        #q1 = str(q.statement.compile(dialect=mssql.dialect()))
         label = label.split(',')
+        q = self.session.query(Stream,Stream_Details,Stream_MetaData ).filter(Stream.camera_id== self.id)\
+                .filter(Stream.id == Stream_Details.stream_id , Stream_Details.id == Stream_MetaData.stream_details_id) \
+                .filter(Stream_Details.start_time >= stime, Stream_Details.end_time <= etime) \
+                .filter(Stream_MetaData.label.in_(label))
+        q1 = str(q.statement.compile(dialect=mysql.dialect()))
+
         for instance in self.session.query(Stream,Stream_Details,Stream_MetaData ).filter(Stream.camera_id== self.id)\
                 .filter(Stream.id == Stream_Details.stream_id , Stream_Details.id == Stream_MetaData.stream_details_id) \
                 .filter(Stream_Details.start_time >= stime, Stream_Details.end_time <= etime) \
@@ -222,6 +224,8 @@ class database:
                        'manifest_file_name':instance.Stream_Details.manifest_file_name,
                        'live':instance.Stream_Details.live,
                        'label_timestamp':instance.Stream_MetaData.timestamp,
+                       # convert decimal to str to make it json serializable
+                       'seconds': str(instance.Stream_MetaData.seconds),
                        'start_time':instance.Stream_Details.start_time.strftime('%Y-%m-%d %H:%M:%S'),
                        'end_time':instance.Stream_Details.end_time.strftime('%Y-%m-%d %H:%M:%S')})
 
@@ -321,7 +325,7 @@ class database:
         self.session.commit()
         return
 
-    def update_stream(self,p_object):
+    def update_stream_details(self,p_object):
         stmt = update(Stream_Details).where(Stream_Details.id == p_object.id). \
             values(live='False')
         self.session.commit()
@@ -334,8 +338,8 @@ class database:
 
 def testHarness():
     event = {}
-    event['camera_id'] = 1
-    event['label'] = 'person,duck'
+    event['camera_id'] = 2
+    event['label'] = 'person,knife'
 
     # db = database('1')
     # instance = db.get_analytics_metaData_object('raw_file_next_value')
@@ -352,8 +356,8 @@ def testHarness():
     p_object.resolution = '1280x720x3'
     p_object.start_time = datetime.datetime.strptime('2018-06-1 9:04:02', '%Y-%m-%d %H:%M:%S')
     #db.put_stream_details(p_object)
-    instance = db.get_stream_details_object1('start_time',p_object)
-    db.update_test(instance)
+    #instance = db.get_stream_details_object1('start_time',p_object)
+
     print('')
 
     if 'client_id' in event:
@@ -363,7 +367,7 @@ def testHarness():
 
     if 'camera_id' in event:
         db = database(event['camera_id'])
-        body = db.get_stream_details()
+        #body = db.get_stream_details()
         #print(json.dumps(body))
         s = '2018-05-01 11:00:00'
         e = '2018-06-15 09:02:02'
