@@ -3,6 +3,7 @@ from sqlalchemy import create_engine,update
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from AGdb.rds_config import db_username,db_password,db_endpoint,db_port,db_name
+#from .rds_config import db_username,db_password,db_endpoint,db_port,db_name
 from AGdb.create_tables import Client,Camera,Client_Cameras,Stream,Stream_Details,Stream_MetaData,\
     Stream_Details_Raw,Stream_Details_TS,Analytics_MetaData
 import json
@@ -185,6 +186,10 @@ class database:
         elif query_column == 'rawfilename':
             query_string = " select producer_time,stream_details_id " \
                            "from Stream_Details_Raw where rawfilename = '" + str(id) + "'"
+
+        if query_column == 'max_rawfilename':
+            query_string = " select max(rawfilename) " \
+                           "from Stream_Details_Raw where stream_details_id = " + str(id)
 
 
 

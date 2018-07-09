@@ -1,4 +1,5 @@
 import json
+# note no need of putting AGdb.database for import
 from database import database
 
 
