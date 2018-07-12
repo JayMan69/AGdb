@@ -10,7 +10,7 @@ import json
 import datetime
 from sqlalchemy.dialects import mysql
 from sqlalchemy import func
-
+from sqlalchemy.sql.functions import coalesce
 
 class Object(object):
     pass
@@ -25,12 +25,15 @@ class database:
 
         engine = create_engine(connection_string)
         Base.metadata.bind = engine
-
+        self.engine = engine
         DBSession = sessionmaker(bind=engine)
         self.session = DBSession()
         if id != None:
             self.id = id
 
+    def close(self):
+        self.session.close()
+        self.engine.dispose()
 
     def get_clients(self):
         # List clients in the client table
@@ -78,7 +81,8 @@ class database:
         rs = []
 
         for instance in self.session.query(Client,Camera,Client_Cameras).filter(Client.id== self.id) \
-                .filter(Client.id == Client_Cameras.client_id):
+                .filter(Client.id == Client_Cameras.client_id) \
+                .filter(Camera.id == Client_Cameras.camera_id):
             count = count + 1
             rs.append({'id':instance.Camera.id,'name':instance.Camera.name})
         rs1 = {'count':count,'result_set':rs}
@@ -153,14 +157,15 @@ class database:
         rs = []
         stime = datetime.datetime.strptime(stime, '%Y-%m-%d %H:%M:%S')
         etime = datetime.datetime.strptime(etime, '%Y-%m-%d %H:%M:%S')
-        #q = self.session.query(Camera,Stream,Stream_Details).filter(Camera.id== self.id)\
-        #        .filter(Camera.id == Stream.camera_id , Stream.id == Stream_Details.stream_id) \
-        #        .filter(Stream_Details.start_time >= stime, Stream_Details.end_time <= etime)
-        #q1 = str(q.statement.compile(dialect=mysql.dialect()))
+        q = self.session.query(Camera,Stream,Stream_Details).filter(Camera.id== self.id)\
+                .filter(Camera.id == Stream.camera_id , Stream.id == Stream_Details.stream_id) \
+                .filter(Stream_Details.start_time >= stime, coalesce(Stream_Details.end_time,Stream_Details.start_time) <= etime)
+        q1 = str(q.statement.compile(dialect=mysql.dialect()))
 
+        # Use coalesce to set end time to start time for null end times for live events
         for instance in self.session.query(Camera,Stream,Stream_Details).filter(Camera.id== self.id)\
                 .filter(Camera.id == Stream.camera_id , Stream.id == Stream_Details.stream_id) \
-                .filter(Stream_Details.start_time >= stime, Stream_Details.end_time <= etime) :
+                .filter(Stream_Details.start_time >= stime, coalesce(Stream_Details.end_time,Stream_Details.start_time) <= etime) :
             count = count + 1
             rs.append({'name':instance.Stream.stream_name,
                        'arn': instance.Stream.arn,
@@ -168,7 +173,8 @@ class database:
                        'manifest_file_name':instance.Stream_Details.manifest_file_name,
                        'live':instance.Stream_Details.live,
                        'start_time':instance.Stream_Details.start_time.strftime('%Y-%m-%d %H:%M:%S'),
-                       'end_time':instance.Stream_Details.end_time.strftime('%Y-%m-%d %H:%M:%S')})
+                       'end_time':instance.Stream_Details.end_time.strftime('%Y-%m-%d %H:%M:%S') if instance.Stream_Details.end_time != None else None
+                       })
 
         rs1 = {'count':count,'result_set':rs}
         return rs1
@@ -211,15 +217,15 @@ class database:
         stime = datetime.datetime.strptime(stime, '%Y-%m-%d %H:%M:%S')
         etime = datetime.datetime.strptime(etime, '%Y-%m-%d %H:%M:%S')
         label = label.split(',')
-        q = self.session.query(Stream,Stream_Details,Stream_MetaData ).filter(Stream.camera_id== self.id)\
-                .filter(Stream.id == Stream_Details.stream_id , Stream_Details.id == Stream_MetaData.stream_details_id) \
-                .filter(Stream_Details.start_time >= stime, Stream_Details.end_time <= etime) \
-                .filter(Stream_MetaData.label.in_(label))
-        q1 = str(q.statement.compile(dialect=mysql.dialect()))
+        # q = self.session.query(Stream,Stream_Details,Stream_MetaData ).filter(Stream.camera_id== self.id)\
+        #         .filter(Stream.id == Stream_Details.stream_id , Stream_Details.id == Stream_MetaData.stream_details_id) \
+        #         .filter(Stream_Details.start_time >= stime, Stream_Details.end_time <= etime) \
+        #         .filter(Stream_MetaData.label.in_(label))
+        # q1 = str(q.statement.compile(dialect=mysql.dialect()))
 
         for instance in self.session.query(Stream,Stream_Details,Stream_MetaData ).filter(Stream.camera_id== self.id)\
                 .filter(Stream.id == Stream_Details.stream_id , Stream_Details.id == Stream_MetaData.stream_details_id) \
-                .filter(Stream_Details.start_time >= stime, Stream_Details.end_time <= etime) \
+                .filter(Stream_Details.start_time >= stime, coalesce(Stream_Details.end_time,Stream_Details.start_time) <= etime) \
                 .filter(Stream_MetaData.label.in_(label)):
             count = count + 1
             rs.append({'name':instance.Stream.stream_name,
@@ -232,7 +238,8 @@ class database:
                        # convert decimal to str to make it json serializable
                        'seconds': str(instance.Stream_MetaData.seconds),
                        'start_time':instance.Stream_Details.start_time.strftime('%Y-%m-%d %H:%M:%S'),
-                       'end_time':instance.Stream_Details.end_time.strftime('%Y-%m-%d %H:%M:%S')})
+                       'end_time':instance.Stream_Details.end_time.strftime('%Y-%m-%d %H:%M:%S') if instance.Stream_Details.end_time != None else None
+                       })
 
         rs1 = {'count':count,'result_set':rs}
         return rs1
@@ -343,14 +350,15 @@ class database:
 
 def testHarness():
     event = {}
-    event['camera_id'] = 2
+    event['camera_id'] = 1
+    event['client_id'] = 1
     event['label'] = 'person,knife'
 
     # db = database('1')
     # instance = db.get_analytics_metaData_object('raw_file_next_value')
     # db.update_analytics_metaData(instance)
 
-    db = database(2)
+    db = database(1)
     #print(db.get_analytics_metaData_object('raw_file_next_value').value)
 
     p_object = Object()
@@ -368,17 +376,19 @@ def testHarness():
     if 'client_id' in event:
         db = database(event['client_id'])
         body = db.get_client_camera()
-        #print(json.dumps(body))
+        print(json.dumps(body))
+        db.close()
 
     if 'camera_id' in event:
         db = database(event['camera_id'])
         #body = db.get_stream_details()
         #print(json.dumps(body))
-        s = '2018-05-01 11:00:00'
-        e = '2018-06-15 09:02:02'
+        s = '2018-07-11 12:00:00'
+        e = '2018-07-12 12:18:30'
         label = event['label']
-        body = db.get_stream_metadata_by_time(s,e,label)
+        body = db.get_stream_details_by_time(s,e)
         print(json.dumps(body))
+        db.close()
 
 if __name__ == '__main__':
     testHarness()

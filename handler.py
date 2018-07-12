@@ -9,16 +9,20 @@ def clients(event, context):
         if 'client_id' in event['headers']:
             db = database(event['headers']['client_id'])
             body = db.get_client()
+            db.close()
         else:
             db = database()
             body = db.get_clients()
+            db.close()
     else:
         if 'client_id' in event:
             db = database(event['client_id'])
             body = db.get_client()
+            db.close()
         else:
             db = database()
             body = db.get_clients()
+            db.close()
 
 
     response = {
@@ -39,16 +43,20 @@ def cameras(event, context):
         if 'camera_id' in event['headers']:
             db = database(event['headers']['camera_id'])
             body = db.get_camera()
+            db.close()
         else:
             db = database()
             body = db.get_cameras()
+            db.close()
     else:
         if 'camera_id' in event:
             db = database(event['camera_id'])
             body = db.get_camera()
+            db.close()
         else:
             db = database()
             body = db.get_cameras()
+            db.close()
 
 
     response = {
@@ -69,6 +77,7 @@ def client_cameras(event, context):
         if 'client_id' in event['headers']:
             db = database(event['headers']['client_id'])
             body = db.get_client_camera()
+            db.close()
         else:
             body = "client_id not present in headers"
         response = {
@@ -82,6 +91,7 @@ def client_cameras(event, context):
         if 'client_id' in event:
             db = database(event['client_id'])
             body = db.get_client_camera()
+            db.close()
         else:
             body = "client_id not present in headers"
         response = {
@@ -101,6 +111,7 @@ def streams(event, context):
         if 'camera_id' in event['headers']:
             db = database(event['headers']['camera_id'])
             body = db.get_stream()
+            db.close()
         else:
             body = 'camera_id not present in headers'
 
@@ -115,6 +126,7 @@ def streams(event, context):
         if 'camera_id' in event:
             db = database(event['camera_id'])
             body = db.get_stream()
+            db.close()
         else:
             body = 'camera_id not present in headers'
 
@@ -139,6 +151,7 @@ def stream_details(event, context):
                 body = db.get_stream_details_by_time(stime,etime)
             else:
                 body = db.get_stream_details()
+            db.close()
         else:
             body = 'camera_id not present in headers'
     else:
@@ -150,6 +163,7 @@ def stream_details(event, context):
                 body = db.get_stream_details_by_time(stime,etime)
             else:
                 body = db.get_stream_details()
+            db.close()
         else:
             body = 'camera_id not present in headers'
 
@@ -179,6 +193,7 @@ def stream_metadata(event, context):
                     body = 'label not present in headers'
             else:
                 body = 'start_time or end_time not present in headers'
+            db.close()
         else:
             body = 'camera_id not present in headers'
     else:
@@ -194,6 +209,7 @@ def stream_metadata(event, context):
                     body = 'label not present in headers'
             else:
                 body = 'start_time or end_time not present in headers'
+            db.close()
         else:
             body = 'camera_id not present in headers'
 
