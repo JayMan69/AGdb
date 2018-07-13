@@ -105,20 +105,35 @@ class database:
 
         return instance
 
-    def get_stream_details(self):
+    def get_stream_details(self,live='False'):
         # List streams given camera id
         count = 0
         rs = []
-        for instance in self.session.query(Camera,Stream,Stream_Details).filter(Camera.id== self.id) \
-                .filter(Camera.id == Stream.camera_id, Stream.id == Stream_Details.stream_id):
-            count = count + 1
-            rs.append({'name':instance.Stream.stream_name,
-                       'arn': instance.Stream.arn,
-                       'id':instance.Stream_Details.id,
-                       'manifest_file_name':instance.Stream_Details.manifest_file_name,
-                       'live':instance.Stream_Details.live,
-                       'start_time':instance.Stream_Details.start_time.strftime('%Y-%m-%d %H:%M:%S'),
-                       'end_time':instance.Stream_Details.end_time.strftime('%Y-%m-%d %H:%M:%S')})
+        if live == 'False':
+            for instance in self.session.query(Camera,Stream,Stream_Details).filter(Camera.id== self.id) \
+                    .filter(Camera.id == Stream.camera_id, Stream.id == Stream_Details.stream_id):
+                count = count + 1
+                rs.append({'name':instance.Stream.stream_name,
+                           'arn': instance.Stream.arn,
+                           'id':instance.Stream_Details.id,
+                           'manifest_file_name':instance.Stream_Details.manifest_file_name,
+                           'live':instance.Stream_Details.live,
+                           'start_time':instance.Stream_Details.start_time.strftime('%Y-%m-%d %H:%M:%S'),
+                           'end_time':instance.Stream_Details.end_time.strftime('%Y-%m-%d %H:%M:%S') if instance.Stream_Details.end_time != None else None
+                           })
+        else:
+            for instance in self.session.query(Camera,Stream,Stream_Details).filter(Camera.id== self.id) \
+                    .filter(Camera.id == Stream.camera_id, Stream.id == Stream_Details.stream_id)\
+                    .filter(Stream_Details.live == 'True'):
+                count = count + 1
+                rs.append({'name':instance.Stream.stream_name,
+                           'arn': instance.Stream.arn,
+                           'id':instance.Stream_Details.id,
+                           'manifest_file_name':instance.Stream_Details.manifest_file_name,
+                           'live':instance.Stream_Details.live,
+                           'start_time':instance.Stream_Details.start_time.strftime('%Y-%m-%d %H:%M:%S'),
+                           'end_time':instance.Stream_Details.end_time.strftime('%Y-%m-%d %H:%M:%S') if instance.Stream_Details.end_time != None else None
+                           })
 
         rs1 = {'count':count,'result_set':rs}
         return rs1
@@ -353,13 +368,14 @@ def testHarness():
     event['camera_id'] = 1
     event['client_id'] = 1
     event['label'] = 'person,knife'
+    event['live'] = 'True'
 
     # db = database('1')
     # instance = db.get_analytics_metaData_object('raw_file_next_value')
     # db.update_analytics_metaData(instance)
 
     db = database(1)
-    #print(db.get_analytics_metaData_object('raw_file_next_value').value)
+    print(db.get_stream_details(event['live']))
 
     p_object = Object()
     id = 'test_2_rawfile00001000.mkv'

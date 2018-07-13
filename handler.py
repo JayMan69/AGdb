@@ -145,24 +145,30 @@ def stream_details(event, context):
     if 'headers' in event:
         if 'camera_id' in event['headers']:
             db = database(event['headers']['camera_id'])
-            if 'start_time' in event['headers'] and 'end_time' in event['headers']:
-                stime = event['headers']['start_time']
-                etime = event['headers']['end_time']
-                body = db.get_stream_details_by_time(stime,etime)
+            if 'live' in event['headers']:
+                body = db.get_stream_details(event['headers']['live'])
             else:
-                body = db.get_stream_details()
+                if 'start_time' in event['headers'] and 'end_time' in event['headers']:
+                    stime = event['headers']['start_time']
+                    etime = event['headers']['end_time']
+                    body = db.get_stream_details_by_time(stime,etime)
+                else:
+                    body = db.get_stream_details()
             db.close()
         else:
             body = 'camera_id not present in headers'
     else:
         if 'camera_id' in event:
             db = database(event['camera_id'])
-            if 'start_time' in event and 'end_time' in event:
-                stime = event['start_time']
-                etime = event['end_time']
-                body = db.get_stream_details_by_time(stime,etime)
+            if 'live' in event:
+                body = db.get_stream_details(event['live'])
             else:
-                body = db.get_stream_details()
+                if 'start_time' in event and 'end_time' in event:
+                    stime = event['start_time']
+                    etime = event['end_time']
+                    body = db.get_stream_details_by_time(stime,etime)
+                else:
+                    body = db.get_stream_details()
             db.close()
         else:
             body = 'camera_id not present in headers'
