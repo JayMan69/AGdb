@@ -125,15 +125,17 @@ class database:
             for instance in self.session.query(Camera,Stream,Stream_Details).filter(Camera.id== self.id) \
                     .filter(Camera.id == Stream.camera_id, Stream.id == Stream_Details.stream_id)\
                     .filter(Stream_Details.live == 'True'):
-                count = count + 1
-                rs.append({'name':instance.Stream.stream_name,
-                           'arn': instance.Stream.arn,
-                           'id':instance.Stream_Details.id,
-                           'manifest_file_name':instance.Stream_Details.manifest_file_name,
-                           'live':instance.Stream_Details.live,
-                           'start_time':instance.Stream_Details.start_time.strftime('%Y-%m-%d %H:%M:%S'),
-                           'end_time':instance.Stream_Details.end_time.strftime('%Y-%m-%d %H:%M:%S') if instance.Stream_Details.end_time != None else None
-                           })
+                # for bug where start times are sometimes null. Skip that record completely
+                if instance.Stream_Details.start_time != None :
+                    count = count + 1
+                    rs.append({'name':instance.Stream.stream_name,
+                               'arn': instance.Stream.arn,
+                               'id':instance.Stream_Details.id,
+                               'manifest_file_name':instance.Stream_Details.manifest_file_name,
+                               'live':instance.Stream_Details.live,
+                               'start_time':instance.Stream_Details.start_time.strftime('%Y-%m-%d %H:%M:%S'),
+                               'end_time':instance.Stream_Details.end_time.strftime('%Y-%m-%d %H:%M:%S') if instance.Stream_Details.end_time != None else None
+                               })
 
         rs1 = {'count':count,'result_set':rs}
         return rs1
